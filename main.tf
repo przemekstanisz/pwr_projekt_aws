@@ -65,7 +65,7 @@ resource "aws_internet_gateway" "vpc_main_gateway" {
   }
 }
 
-# Elastic IP dla NAT gateway - wykomentowane ze względy na ewentualne koszty
+# Elastic IP dla NAT gateway !!! UWAGA GENERUJE KOSZTY !!!
 resource "aws_eip" "nat_eip" {
   domain = "vpc"
 }
@@ -122,17 +122,8 @@ resource "aws_route_table_association" "public_3" {
   route_table_id = aws_route_table.public_route_table.id
 }
 
-# resource "aws_route_table_association" "private_1" {
-#   subnet_id      = aws_subnet.private_1.id
-#   route_table_id = aws_route_table.public_route_table.id
-# }
-
-# resource "aws_route_table_association" "private_2" {
-#   subnet_id      = aws_subnet.private_2.id
-#   route_table_id = aws_route_table.public_route_table.id
-# }
-
 # UTWORZENIE GRUP BEZPIECZEŃSTWA
+
 # Dla podsieci prywatnej 1 (tylko użytkownicy Wydziału Planowania Kształcenia - grupa 1)
 resource "aws_security_group" "group_1" {
   name        = "group-1-sg"
@@ -178,25 +169,10 @@ resource "aws_security_group" "public" {
 ## Utworzenie S3 Bucket dla każdej grupy użytkowników
 # S3 Bucket dla grupy 1
 
-# resource "aws_s3_bucket" "group_1" {
-#   bucket = "group-1-files-${random_id.suffix.hex}"
-#   acl    = "private"
-
-#   website {
-#     index_document = "index.html"
-#     error_document = "error.html"
-#   }
-# }
-
 resource "aws_s3_bucket" "group_1" {
   bucket = "group-1-files-${random_id.suffix.hex}"
   # acl    = "private"
 }
-
-# resource "aws_s3_bucket_acl" "group_1_acl" {
-#   bucket = aws_s3_bucket.group_1.id
-#   acl    = "private"
-# }
 
 # Polityka dostępu
 resource "aws_s3_bucket_policy" "group_1_policy" {
@@ -275,25 +251,10 @@ resource "aws_s3_object" "group_1_error" {
 
 # S3 Bucket dla grupy 2
 
-# resource "aws_s3_bucket" "group_2" {
-#   bucket = "group-2-files-${random_id.suffix.hex}"
-#   acl    = "private"
-
-#   website {
-#     index_document = "index.html"
-#     error_document = "error.html"
-#   }
-# }
-
 resource "aws_s3_bucket" "group_2" {
   bucket = "group-2-files-${random_id.suffix.hex}"
   # acl    = "private"
 }
-
-# resource "aws_s3_bucket_acl" "group_2_acl" {
-#   bucket = aws_s3_bucket.group_2.id
-#   acl    = "private"
-# }
 
 # Polityka dostępu
 resource "aws_s3_bucket_policy" "group_2_policy" {
@@ -371,25 +332,10 @@ resource "aws_s3_object" "group_2_error" {
 
 # Publiczny bucket
 
-# resource "aws_s3_bucket" "group_3" {
-#   bucket = "public-files-${random_id.suffix.hex}"
-#   acl    = "public-read"
-
-#   website {
-#     index_document = "index.html"
-#     error_document = "error.html"
-#   }
-# }
-
 resource "aws_s3_bucket" "group_3" {
   bucket = "public-files-${random_id.suffix.hex}"
   # acl    = "public-read"
 }
-
-# resource "aws_s3_bucket_acl" "group_3_acl" {
-#   bucket = aws_s3_bucket.group_3.id
-#   acl    = "public-read"  # Publiczny dostęp do odczytu
-# }
 
 # Polityka dostępu
 resource "aws_s3_bucket_policy" "group_3_policy" {
@@ -424,8 +370,6 @@ resource "aws_s3_bucket_public_access_block" "group_3_access" {
   restrict_public_buckets = false
 }
 
-
-
 resource "aws_s3_bucket_website_configuration" "group_3_website" {
   bucket = aws_s3_bucket.group_3.bucket
   index_document { suffix = "index.html" }
@@ -459,18 +403,6 @@ resource "random_id" "suffix" {
 }
 
 # Output z adresami URL
-# output "group_1_url" {
-#   value = aws_s3_bucket.group_1.website_endpoint
-# }
-
-# output "group_2_url" {
-#   value = aws_s3_bucket.group_2.website_endpoint
-# }
-
-# output "group_3_url" {
-#   value = aws_s3_bucket.group_3.website_endpoint
-# }
-
 
 output "group_1_url" {
   value = aws_s3_bucket_website_configuration.group_1_website.website_endpoint
@@ -483,117 +415,3 @@ output "group_2_url" {
 output "group_3_url" {
   value = aws_s3_bucket_website_configuration.group_3_website.website_endpoint
 }
-
-# ZDEFINIOWANIE S3 BUCKET POLICIES DLA POSZCZEGÓLNYCH GRUP UŻYTKOWNIKÓW
-# Dla group_1 (prywatny)
-# resource "aws_s3_bucket_policy" "group_1_policy" {
-#   bucket = aws_s3_bucket.group_1.id
-
-#   policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [
-#       # 1. Dostęp z sieci firmowej grupy 1
-#       {
-#         Sid = "Group1OutsideEntry"
-#         Effect    = "Allow"
-#         Principal = "*"
-#         Action    = "s3:GetObject"
-#         Resource  = "${aws_s3_bucket.group_1.arn}/*"
-#         Condition = {
-#           IpAddress = {
-#             "aws:SourceIp" = ["192.168.1.0/24"]
-#           }
-#         }
-#       },
-      
-#       # 2. Dostęp z podsieci group_1 w VPC
-#       {
-#         Sid = "Group1VPCEntry"
-#         Effect    = "Allow"
-#         Principal = "*"
-#         Action    = [
-#           "s3:GetObject",
-#           "s3:ListBucket"
-#         ]
-#         Resource  = [
-#           aws_s3_bucket.group_1.arn,
-#           "${aws_s3_bucket.group_1.arn}/*"
-#         ]
-#         Condition = {
-#           StringEquals = {
-#             "aws:SourceVpc" = aws_vpc.vpc_main.id
-#           }
-#         }
-#       }
-#     ]
-#   })
-# }
-
-# # Dla group_2 (prywatny)
-# resource "aws_s3_bucket_policy" "group_2_policy" {
-#   bucket = aws_s3_bucket.group_2.id
-
-#   policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [
-#       # 1. Dostęp z sieci firmowej grupy 2
-#       {
-#         Sid = "Group2OutsideEntry"
-#         Effect    = "Allow"
-#         Principal = "*"
-#         Action    = "s3:GetObject"
-#         Resource  = "${aws_s3_bucket.group_2.arn}/*"
-#         Condition = {
-#           IpAddress = {
-#             "aws:SourceIp" = ["192.168.2.0/24"]
-#           }
-#         }
-#       },
-      
-#       # 2. Dostęp z podsieci group_2 w VPC
-#       {
-#         Sid = "Group2VPCEntry"
-#         Effect    = "Allow"
-#         Principal = "*"
-#         Action    = [
-#           "s3:GetObject",
-#           "s3:ListBucket"
-#         ]
-#         Resource  = [
-#           aws_s3_bucket.group_2.arn,
-#           "${aws_s3_bucket.group_2.arn}/*"
-#         ]
-#         Condition = {
-#           StringEquals = {
-#             "aws:SourceVpc" = aws_vpc.vpc_main.id
-#           }
-#         }
-#       }
-#     ]
-#   })
-# }
-
-# # Dla group_3 (publiczny)
-# resource "aws_s3_bucket_policy" "group_3_policy" {
-#   bucket = aws_s3_bucket.group_3.id
-
-#   policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [
-#       # Dostęp publiczny do odczytu
-#       {
-#         Sid = "Group3OutsideEntry"
-#         Effect    = "Allow"
-#         Principal = "*"
-#         Action    = [
-#           "s3:GetObject",
-#           "s3:ListBucket"
-#         ]
-#         Resource  = [
-#           aws_s3_bucket.group_3.arn,
-#           "${aws_s3_bucket.group_3.arn}/*"
-#         ]
-#       }
-#     ]
-#   })
-# }
