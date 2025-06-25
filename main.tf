@@ -134,7 +134,7 @@ resource "aws_security_group" "group_1" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["192.168.1.0/24"] # adresacja IP grupy 1 - zakres adresów fizycznych
+    cidr_blocks = ["37.31.140.0/24"] # adresacja IP grupy 1 - zakres adresów fizycznych
   }
 }
 
@@ -188,7 +188,7 @@ resource "aws_s3_bucket_policy" "group_1_policy" {
         Resource  = "${aws_s3_bucket.group_1.arn}/*",
         Condition = {
           IpAddress = {
-            "aws:SourceIp" = ["192.168.1.0/24"]
+            "aws:SourceIp" = ["37.31.140.0/24"]
           }
         }
       },
@@ -199,7 +199,7 @@ resource "aws_s3_bucket_policy" "group_1_policy" {
         Resource  = aws_s3_bucket.group_1.arn,
         Condition = {
           IpAddress = {
-            "aws:SourceIp" = ["192.168.1.0/24"]
+            "aws:SourceIp" = ["37.31.140.0/24"]
           }
         }
       },
