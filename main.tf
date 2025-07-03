@@ -10,8 +10,8 @@ terraform {
 #CREDENTIALS
 provider "aws" {
   region = "us-east-1"
-  access_key = "AKIAYA2N72GEIGMZDHNA"
-  secret_key = "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"
+  access_key = ""
+  secret_key = ""
 }
 
 # Główne VPC dla komórki organizacyjnej OKKiSz
